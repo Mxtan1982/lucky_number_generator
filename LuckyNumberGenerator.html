@@ -95,7 +95,7 @@
   </style>
 </head>
 <body>
-  <h1>🔮 Lucky Number Assistant for Magnum </h1>
+  <h1>🔮 Lucky Number Generator </h1>
   <label>开彩期号（如 200/25）：</label>
   <input type="text" id="draw" placeholder="例如：200/25" />
   <br /><br />
@@ -121,9 +121,9 @@
   <div class="disclaimer">
     <strong>使用说明：</strong><br />
     本软件为辅助工具，旨在帮助用户预测和增加中奖几率，但不保证100%中奖。<br />
-    请在输入框中填写当天MAGNUM期号（格式如：200/25），<br />
+    请在输入框中填写当天MM期号（格式如：200/25），<br />
     然后选择您的幸运号码（0-9）。<br />
-    点击“生成预测号码”按钮，即可获得当天幸运号码列表。<br />
+    点击"生成预测号码"按钮，即可获得当天幸运号码列表。<br />
     祝您好运！
   </div>
 
@@ -168,18 +168,73 @@
       return grid;
     }
 
+    // 增强的形状识别方法
     function getShapes(grid) {
       const result = [];
-      const shapeOffsets = [
-        [[0, 0], [0, 1], [0, 2], [1, 1]],
-        [[0, 0], [1, 0], [2, 0], [2, 1]],
-        [[0, 1], [1, 0], [1, 1], [2, 0]],
-        [[0, 0], [0, 1], [1, 0], [1, 1]],
-        [[0, 0], [1, 0], [2, 0], [3, 0]],
-        [[0, 0], [0, 1], [0, 2], [0, 3]],
-      ];
       const h = grid.length;
       const w = grid[0].length;
+
+      // 定义Z字形和T字形方向
+      const zShapes = [
+        // 水平Z字形
+        [[0,0],[0,1],[1,1],[1,2]],
+        [[1,0],[1,1],[0,1],[0,2]],
+        // 垂直Z字形
+        [[0,0],[1,0],[1,1],[2,1]],
+        [[0,1],[1,1],[1,0],[2,0]]
+      ];
+
+      const tShapes = [
+        // 上T
+        [[0,1],[1,0],[1,1],[1,2]],
+        // 下T
+        [[1,1],[0,0],[0,1],[0,2]],
+        // 左T
+        [[1,0],[0,1],[1,1],[2,1]],
+        // 右T
+        [[1,1],[0,0],[1,0],[2,0]]
+      ];
+
+      // 检查所有可能的Z字形
+      for (let r = 0; r < h; r++) {
+        for (let c = 0; c < w; c++) {
+          for (let shape of zShapes) {
+            const pos = shape.map(([dr, dc]) => [r + dr, c + dc]);
+            if (pos.every(([rr, cc]) => rr < h && cc < w)) {
+              const num = pos.map(([rr, cc]) => grid[rr][cc]).join('');
+              if (!num.includes('null')) {
+                result.push(num);
+              }
+            }
+          }
+        }
+      }
+
+      // 检查所有可能的T字形
+      for (let r = 0; r < h; r++) {
+        for (let c = 0; c < w; c++) {
+          for (let shape of tShapes) {
+            const pos = shape.map(([dr, dc]) => [r + dr, c + dc]);
+            if (pos.every(([rr, cc]) => rr < h && cc < w)) {
+              const num = pos.map(([rr, cc]) => grid[rr][cc]).join('');
+              if (!num.includes('null')) {
+                result.push(num);
+              }
+            }
+          }
+        }
+      }
+
+      // 原有的形状识别（保持兼容性）
+      const shapeOffsets = [
+        [[0, 0], [0, 1], [0, 2], [1, 1]],  // T形
+        [[0, 0], [1, 0], [2, 0], [2, 1]],  // L形
+        [[0, 1], [1, 0], [1, 1], [2, 0]],   // Z形
+        [[0, 0], [0, 1], [1, 0], [1, 1]],  // 方形
+        [[0, 0], [1, 0], [2, 0], [3, 0]],  // 垂直直线
+        [[0, 0], [0, 1], [0, 2], [0, 3]],  // 水平直线
+      ];
+
       for (let r = 0; r < h; r++) {
         for (let c = 0; c < w; c++) {
           for (let shape of shapeOffsets) {
@@ -193,6 +248,7 @@
           }
         }
       }
+
       return result;
     }
 
@@ -225,7 +281,7 @@
       renderGrid(mainGrid, 'mainGrid');
       renderGrid(subGrid, 'subGrid');
       let allNumbers = getShapes(mainGrid).concat(getShapes(subGrid));
-      allNumbers = allNumbers.filter((num) => num.includes(lucky)).slice(0, 100);
+      allNumbers = allNumbers.filter((num) => num.includes(lucky.toString())).slice(0, 100);
       const grouped = allNumbers.reduce((acc, val, i) => {
         if (i % 5 === 0) acc.push([]);
         acc[acc.length - 1].push(val);
